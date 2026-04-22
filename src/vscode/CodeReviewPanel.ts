@@ -781,7 +781,7 @@ export class CodeReviewPanel implements vscode.WebviewViewProvider {
                 body: markdownBody,
                 mode: vscode.CommentMode.Preview,
                 author: {
-                    name: 'Github Copilot Code Reviewer',
+                    name: 'NextG Code Review',
                     iconPath: vscode.Uri.joinPath(
                         this._extensionUri,
                         'images/icon.png'
@@ -1253,7 +1253,7 @@ export class CodeReviewPanel implements vscode.WebviewViewProvider {
     <link href="${styleResetUri.toString()}" rel="stylesheet">
     <link href="${styleVSCodeUri.toString()}" rel="stylesheet">
     <link href="${styleMainUri.toString()}" rel="stylesheet">
-    <title>Copilot Code Review</title>
+    <title>NextG Code Review</title>
 </head>
 <body>
     <div class="container">

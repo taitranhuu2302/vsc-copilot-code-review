@@ -1,6 +1,6 @@
 {
   "name": "github-copilot-code-reviewer",
-  "displayName": "Github Copilot Code Reviewer",
+  "displayName": "NextG Code Review",
   "description": "Review source code changes in Git using GitHub Copilot",
   "publisher": "jakubkozera",
   "version": "0.22.2",
@@ -64,7 +64,7 @@
       },
       {
         "command": "codeReview.previousComment",
-        "title": "Previous Comment", 
+        "title": "Previous Comment",
         "category": "codeReview",
         "icon": "$(arrow-left)"
       },
@@ -79,7 +79,7 @@
       {
         "id": "codereview",
         "name": "codereview",
-        "fullName": "Github Copilot Code Reviewer",
+        "fullName": "NextG Code Review",
         "description": "Review source code changes",
         "isSticky": false,
         "commands": [
@@ -163,7 +163,7 @@
       "scm": [
         {
           "id": "codeReview.codeReview",
-          "name": "Copilot Code Review",
+          "name": "NextG Code Review",
           "when": "scmProvider == git",
           "type": "webview"
         }
@@ -188,9 +188,9 @@
           "icon": "$(arrow-left)"
         },
         {
-          "command": "codeReview.nextComment", 
+          "command": "codeReview.nextComment",
           "when": "commentThread == codeReview-review",
-          "group": "navigation@2", 
+          "group": "navigation@2",
           "icon": "$(arrow-right)"
         },
         {
@@ -208,7 +208,7 @@
           "icon": "$(arrow-left)"
         },
         {
-          "command": "codeReview.nextComment", 
+          "command": "codeReview.nextComment",
           "when": "commentThread == codeReview-review",
           "group": "navigation@2",
           "icon": "$(arrow-right)"
@@ -229,7 +229,7 @@
         "when": "commentController == codeReview-comments"
       },
       {
-        "command": "codeReview.previousComment", 
+        "command": "codeReview.previousComment",
         "key": "ctrl+shift+b",
         "mac": "cmd+shift+b",
         "when": "commentController == codeReview-comments"
@@ -257,7 +257,8 @@
             "package-lock.json",
             "yarn.lock",
             "pnpm-lock.yaml",
-            "*.min.js"
+            "*.min.js",
+            ".codeReview/**"
           ],
           "items": {
             "type": "string"
@@ -293,7 +294,7 @@
     "preinstall": "npx only-allow pnpm",
     "check-exclusive": "ps aux | grep -v grep | grep -q 'esbuild.*--watch' && echo 'esbuild --watch running, aborting!' && exit 1 || exit 0",
     "vscode:prepublish": "pnpm check-exclusive && rm -rf ./out && pnpm esbuild-base --minify --pure:console.debug",
-    "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --define:__GIT_VERSION__=\\\"$GIT_VERSION\\\"",
+    "esbuild-base": "node ./node_modules/esbuild/bin/esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --define:__GIT_VERSION__=\\\"$GIT_VERSION\\\"",
     "esbuild": "pnpm esbuild-base --sourcemap",
     "watch": "pnpm esbuild-base --sourcemap --watch",
     "dev": "GIT_VERSION=$(git describe  --tags --long) pnpm build",

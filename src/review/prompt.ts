@@ -1,45 +1,23 @@
 import type { PromptType } from '../types/PromptType';
-import { createReviewPromptV1 } from './promptV1';
-import { createReviewPromptV2 } from './promptV2';
 import { createReviewPromptV2Think } from './promptV2Think';
 
 export const defaultPromptType: PromptType = 'v2think';
-const promptTypes: PromptType[] = ['v1', 'v2', 'v2think'];
 
 export const reasoningTag = 'code_review_process';
 
-function toPromptType(type: string): PromptType {
-    if (!promptTypes.includes(type as PromptType)) {
-        throw new Error(
-            `Invalid prompt type: ${type}. Valid types are: ${promptTypes.join(', ')}`
-        );
-    }
-    return type as PromptType;
-}
-
-export function toPromptTypes(
-    types: string | undefined
-): (PromptType | undefined)[] {
-    if (!types) {
-        return [undefined]; // same as default prompt type, but comments are not marked with it
-    }
-    return types.split(',').map((type) => toPromptType(type.trim()));
+export function toPromptTypes(): (PromptType | undefined)[] {
+    // Single-prompt mode: always run exactly one prompt.
+    return [undefined];
 }
 
 export function createReviewPrompt(
     changeDescription: string | undefined,
     diff: string,
     customPrompt: string,
-    promptType?: PromptType
+    _promptType?: PromptType
 ): string {
-    const type = promptType || defaultPromptType;
-    if (type === 'v2') {
-        return createReviewPromptV2(changeDescription, diff, customPrompt);
-    } else if (type === 'v2think') {
-        return createReviewPromptV2Think(changeDescription, diff, customPrompt);
-    } else {
-        return createReviewPromptV1(changeDescription, diff, customPrompt);
-    }
+    void _promptType;
+    return createReviewPromptV2Think(changeDescription, diff, customPrompt);
 }
 
 export const responseExample = [

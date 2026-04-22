@@ -1,101 +1,90 @@
+import { existsSync, readFileSync } from 'fs';
+import * as path from 'path';
+
 import { reasoningTag, responseExample } from './prompt';
+import { renderPromptTemplate } from './promptTemplate';
+
+const languageTemplateCache = new Map<string, string>();
+
+function getTemplateDirectory(): string {
+    const candidates = [
+        // runtime in extension package: out/extension.js -> ../media/prompts
+        path.resolve(__dirname, '../media/prompts'),
+        // runtime in tests/dev from src/review/*.ts -> ../../media/prompts
+        path.resolve(__dirname, '../../media/prompts'),
+    ];
+
+    for (const candidate of candidates) {
+        if (existsSync(candidate)) {
+            return candidate;
+        }
+    }
+
+    throw new Error('Prompt template directory not found');
+}
+
+function loadLanguageTemplate(templateName: string): string {
+    const cached = languageTemplateCache.get(templateName);
+    if (cached) {
+        return cached;
+    }
+
+    const templatePath = path.join(getTemplateDirectory(), 'lang', templateName);
+    const template = readFileSync(templatePath, 'utf8').trim();
+    languageTemplateCache.set(templateName, template);
+    return template;
+}
+
+function inferChangedExtensionsFromDiff(diff: string): Set<string> {
+    const extensions = new Set<string>();
+    const filePathMatches = diff.matchAll(/^\+\+\+ b\/([^\n\r]+)$/gm);
+    for (const match of filePathMatches) {
+        const filePath = match[1].trim().toLowerCase();
+        const dotIndex = filePath.lastIndexOf('.');
+        if (dotIndex > -1 && dotIndex < filePath.length - 1) {
+            extensions.add(filePath.slice(dotIndex));
+        }
+    }
+    return extensions;
+}
+
+function buildLanguageSpecificGuidance(diff: string): string {
+    const extensions = inferChangedExtensionsFromDiff(diff);
+    const sections: string[] = [];
+
+    if (extensions.has('.cs')) {
+        sections.push(loadLanguageTemplate('csharp.md'));
+    }
+
+    if (
+        extensions.has('.jsx') ||
+        extensions.has('.tsx') ||
+        extensions.has('.js') ||
+        extensions.has('.ts')
+    ) {
+        sections.push(loadLanguageTemplate('react.md'));
+    }
+
+    return sections.join('\n\n');
+}
 
 export function createReviewPromptV2Think(
     changeDescription: string | undefined,
     diff: string,
     customPrompt: string
 ): string {
-    customPrompt = customPrompt.length > 0 ? customPrompt.trim() + '\n' : '';
+    const customPromptBlock = customPrompt.trim();
+    const changeDescriptionBlock = changeDescription?.trim()
+        ? `<change_description>\n${changeDescription.trim()}\n</change_description>`
+        : '';
+    const languageSpecificGuidanceBlock = buildLanguageSpecificGuidance(diff);
 
-    let wrappedChangeDescription = '';
-    if (changeDescription && changeDescription.trim()) {
-        wrappedChangeDescription = `
-Here's the change description for context:
-<change_description>
-${changeDescription.trim()}
-</change_description>`;
-    }
-
-    return `
-You are a senior software engineer tasked with reviewing a pull request. Your goal is to analyze the provided git diff and offer insightful, actionable comments on code issues. Focus on identifying bugs, security vulnerabilities, unreadable code, possible refactorings, and typos while considering the changeset as a whole.
-
-Here is the git diff to analyze:
-<git_diff>
-${diff}
-</git_diff>
-${wrappedChangeDescription}
-
-<review_instructions>
-- Analyze the entire git diff provided.
-- Consider how the changes as a whole implement the described feature or fix.
-- Focus on providing comments for added lines.
-- Ensure all comments are actionable and specific.
-- Avoid comments on formatting or purely positive feedback.
-- Do not make assumptions about code not included in the diff.
-- Consider the context of changes across different functions, classes, and files.
-- Don't suggest issues that would be caught by compilations or running tests.
-- Do not suggest reverting to previous logic (removed lines) without a compelling reason.
-${customPrompt}</review_instructions>
-
-<diff_format>
-- The diff starts with a diff header, followed by diff lines.
-- Diff lines have the format \`<LINE NUMBER><TAB><DIFF TYPE><LINE>\`.
-- Lines with DIFF TYPE \`+\` are added.
-- Lines with DIFF TYPE \`-\` are removed. (LINE NUMBER will be 0)
-- Lines with DIFF TYPE \` \` are unchanged and provided for context.
-</diff_format>
-
-<output_format>
-Respond with a JSON array of comment objects. Each object should contain:
-- \`file\`: The path of the file (from the diff header)
-- \`line\`: The first affected LINE NUMBER
-- \`comment\`: A string describing the issue
-- \`severity\`: An integer from 1 (likely irrelevant) to 5 (critical)
-- \`proposedAdjustment\` (optional): An object with proposed code changes containing:
-  - \`originalCode\`: The original code block that needs to be changed
-  - \`adjustedCode\`: The proposed code block replacement  
-  - \`description\`: Explanation of the change
-  - \`startLine\` (optional): Start line for the replacement (if different from comment line)
-  - \`endLine\` (optional): End line for the replacement (if different from comment line)
-
-Include \`proposedAdjustment\` when you can provide a specific, actionable code fix for the identified issue.
-</output_format>
-
-Before providing your final output, wrap your thought process in <${reasoningTag}> tags to show your reasoning and ensure a comprehensive review. In this process:
-1. List out the files changed in the diff.
-2. For each file, summarize the changes and their potential impact.
-3. Identify potential issues across different categories (different from change description, bugs, security vulnerabilities, typos).
-4. Consider the severity of each issue.
-
-<output_example>
-<code_review_process>
-1. Files Changed:
-- src/index.html
-- src/js/main.js
-
-2. Change Summary:
-- Adds a script tag including src/js/main.js in index.html
-- Contains logic in main.js that duplicates calculateTotal from util.js
-- Uses eval() on a possibly user-supplied string in main.js
-
-3. Potential Issues:
-
-Typos:
-- The <script> tag is misspelled as <scirpt> in index.html
-
-Code Quality:
-- Logic in main.js duplicates calculateTotal from util.js; consider refactoring
-
-Security:
-- Using eval() with user-supplied input in main.js may result in code injection
-
-4. Severity Assessment:
-- The typo in the script tag is a moderate issue (4)
-- Code duplication is a medium issue (3)
-- Use of eval() with user input is a critical issue (5)
-</code_review_process>
-
-${JSON.stringify(responseExample, undefined, 2)}
-</output_example>
-`.trim();
+    return renderPromptTemplate('v2think', {
+        CHANGE_DESCRIPTION_BLOCK: changeDescriptionBlock,
+        CUSTOM_PROMPT_BLOCK: customPromptBlock,
+        DIFF: diff,
+        LANGUAGE_SPECIFIC_GUIDANCE_BLOCK: languageSpecificGuidanceBlock,
+        REASONING_TAG: reasoningTag,
+        RESPONSE_EXAMPLE: JSON.stringify(responseExample, undefined, 2),
+    });
 }

@@ -8,9 +8,11 @@ import { ReviewResult } from '@/types/ReviewResult';
 import { correctFilename } from '@/utils/filenames';
 import { DiffFile } from '@/utils/git';
 import { isPathNotExcluded } from '@/utils/glob';
+import { appendReviewHistory } from '@/utils/reviewHistory';
 import type { PromptType } from '../types/PromptType';
 import { parseResponse, sortFileCommentsBySeverity } from './comment';
 import { ModelRequest } from './ModelRequest';
+import { resolveProjectCustomPrompt } from './projectCustomPrompt';
 import { defaultPromptType, toPromptTypes } from './prompt';
 
 export async function reviewDiff(
@@ -26,6 +28,15 @@ export async function reviewDiff(
             isPathNotExcluded(file.file, options.excludeGlobs) &&
             file.status !== 'D' // ignore deleted files
     );
+    const projectCustomPrompt = await resolveProjectCustomPrompt(
+        config.gitRoot,
+        files.map((file) => file.file),
+        config.logger
+    );
+    const effectiveCustomPrompt = mergeCustomPrompts(
+        options.customPrompt,
+        projectCustomPrompt
+    );
 
     //TODO reorder to get relevant input files together, e.g.
     // order by distance: file move < main+test < same dir (levenshtein) < parent dir (levenshtein) < ...
@@ -34,6 +45,7 @@ export async function reviewDiff(
         config,
         request,
         files,
+        effectiveCustomPrompt,
         progress,
         cancellationToken
     );
@@ -53,17 +65,30 @@ export async function reviewDiff(
         comments,
     }));
 
-    return {
+    const result = {
         request,
         fileComments: sortFileCommentsBySeverity(fileComments),
         errors,
     };
+
+    if (!cancellationToken?.isCancellationRequested) {
+        try {
+            await appendReviewHistory(config, result);
+        } catch (error) {
+            config.logger.info(
+                `Failed to write review history: ${error instanceof Error ? error.message : 'Unknown error'}`
+            );
+        }
+    }
+
+    return result;
 }
 
 async function aggregateFileDiffs(
     config: Config,
     request: ReviewRequest,
     files: DiffFile[],
+    customPrompt: string,
     progress?: Progress<{ message?: string; increment?: number }>,
     cancellationToken?: CancellationToken
 ) {
@@ -90,7 +115,8 @@ async function aggregateFileDiffs(
         if (modelRequests.length === 0 || !options.mergeFileReviewRequests) {
             const modelRequest = new ModelRequest(
                 config,
-                request.scope.changeDescription
+                request.scope.changeDescription,
+                customPrompt
             );
             modelRequests.push(modelRequest);
         }
@@ -105,7 +131,8 @@ async function aggregateFileDiffs(
             // if the diff cannot be added to the last request, create a new one
             const modelRequest = new ModelRequest(
                 config,
-                request.scope.changeDescription
+                request.scope.changeDescription,
+                customPrompt
             );
             await modelRequest.addDiff(file.file, diff); // adding the first diff will never throw
             modelRequests.push(modelRequest);
@@ -114,13 +141,22 @@ async function aggregateFileDiffs(
     return modelRequests;
 }
 
+function mergeCustomPrompts(
+    ...prompts: string[]
+): string {
+    return prompts
+        .map((prompt) => prompt.trim())
+        .filter((prompt) => prompt.length > 0)
+        .join('\n\n');
+}
+
 async function generateReviewComments(
     config: Config,
     modelRequests: ModelRequest[],
     progress?: Progress<{ message?: string; increment?: number }>,
     cancellationToken?: CancellationToken
 ) {
-    const promptTypes = toPromptTypes(config.getOptions().comparePromptTypes);
+    const promptTypes = toPromptTypes();
 
     const totalRequests = modelRequests.length * promptTypes.length;
     let requestCounter = 0;

@@ -3,6 +3,7 @@ import type { CancellationToken } from 'vscode';
 
 import { parseResponse } from '@/review/comment';
 import { ModelRequest } from '@/review/ModelRequest';
+import { resolveProjectCustomPrompt } from '@/review/projectCustomPrompt';
 import { reviewDiff } from '@/review/review';
 import { Config } from '@/types/Config';
 import { FileComments } from '@/types/FileComments';
@@ -10,6 +11,7 @@ import { Logger } from '@/types/Logger';
 import { ModelError } from '@/types/ModelError';
 import { ReviewScope } from '@/types/ReviewRequest';
 import { Git } from '@/utils/git';
+import { appendReviewHistory } from '@/utils/reviewHistory';
 
 function createMockConfig() {
     const git = {
@@ -26,12 +28,16 @@ function createMockConfig() {
 
     const config = {
         git,
+        gitRoot: '/mock/git/root',
+        workspaceRoot: '/mock/workspace/root',
         getOptions: vi.fn(() => ({
             customPrompt: 'custom prompt',
             minSeverity: 3,
             excludeGlobs: [] as string[],
             enableDebugOutput: false,
+            chatModel: 'gpt-4o',
             mergeFileReviewRequests: true,
+            maxInputTokensFraction: 0.95,
         })),
         logger,
     } as unknown as Config;
@@ -51,6 +57,12 @@ describe('reviewDiff', () => {
     }));
     vi.mock('@/review/ModelRequest', () => ({
         ModelRequest: vi.fn(),
+    }));
+    vi.mock('@/utils/reviewHistory', () => ({
+        appendReviewHistory: vi.fn(),
+    }));
+    vi.mock('@/review/projectCustomPrompt', () => ({
+        resolveProjectCustomPrompt: vi.fn().mockResolvedValue(''),
     }));
 
     let config: Config;
@@ -98,6 +110,7 @@ describe('reviewDiff', () => {
 
         vi.mocked(git.getChangedFiles).mockResolvedValue(diffFiles);
         vi.mocked(ModelRequest).mockImplementation(() => modelRequest);
+        vi.mocked(resolveProjectCustomPrompt).mockResolvedValue('');
     });
     it('should return a review result', async () => {
         vi.mocked(modelRequest.sendRequest).mockResolvedValueOnce(
@@ -128,6 +141,7 @@ describe('reviewDiff', () => {
 
         expect(modelRequest.addDiff).toHaveBeenCalledTimes(2);
         expect(parseResponse).toHaveBeenCalledWith('model response');
+        expect(appendReviewHistory).toHaveBeenCalledOnce();
     });
 
     it('skips deleted files', async () => {
@@ -170,6 +184,7 @@ describe('reviewDiff', () => {
 
         expect(modelRequest.addDiff).toHaveBeenCalledTimes(1);
         expect(parseResponse).toHaveBeenCalledWith('model response');
+        expect(appendReviewHistory).toHaveBeenCalledOnce();
     });
 
     it('merges file review requests if enabled', async () => {
@@ -189,6 +204,7 @@ describe('reviewDiff', () => {
         expect(result.fileComments).toHaveLength(1);
         expect(result.errors).toHaveLength(0);
         expect(progress.report).toHaveBeenCalledTimes(3);
+        expect(appendReviewHistory).toHaveBeenCalledOnce();
     });
 
     it('does not merge file review requests if disabled', async () => {
@@ -217,6 +233,7 @@ describe('reviewDiff', () => {
         expect(result.fileComments).toHaveLength(1);
         expect(result.errors).toHaveLength(0);
         expect(progress.report).toHaveBeenCalledTimes(4);
+        expect(appendReviewHistory).toHaveBeenCalledOnce();
     });
 
     it('corrects file names if there is a mismatch', async () => {
@@ -242,6 +259,7 @@ describe('reviewDiff', () => {
         expect(config.logger.info).toHaveBeenCalledWith(
             'File name mismatch, correcting "ile1" to "file1"!'
         );
+        expect(appendReviewHistory).toHaveBeenCalledOnce();
     });
 
     it('aborts when cancelled', async () => {
@@ -262,6 +280,7 @@ describe('reviewDiff', () => {
         expect(result.fileComments).toHaveLength(0);
         expect(result.errors).toHaveLength(0);
         expect(progress.report).not.toHaveBeenCalled();
+        expect(appendReviewHistory).not.toHaveBeenCalled();
     });
 
     it('should abort and return errors if a ModelError occurs', async () => {
@@ -282,6 +301,7 @@ describe('reviewDiff', () => {
 
         expect(progress.report).toHaveBeenCalledTimes(3);
         expect(modelRequest.sendRequest).toHaveBeenCalledTimes(1);
+        expect(appendReviewHistory).toHaveBeenCalledOnce();
     });
 
     it('should continue and return errors if a non-ModelError occurs', async () => {
@@ -312,6 +332,7 @@ describe('reviewDiff', () => {
         expect(progress.report).toHaveBeenCalledTimes(4);
         expect(parseResponse).toHaveBeenCalledOnce();
         expect(parseResponse).toHaveBeenCalledWith('model response');
+        expect(appendReviewHistory).toHaveBeenCalledOnce();
     });
 
     it('skips files with empty diff', async () => {
@@ -336,5 +357,6 @@ describe('reviewDiff', () => {
 
         expect(modelRequest.addDiff).toHaveBeenCalledTimes(1);
         expect(parseResponse).toHaveBeenCalledOnce();
+        expect(appendReviewHistory).toHaveBeenCalledOnce();
     });
 });

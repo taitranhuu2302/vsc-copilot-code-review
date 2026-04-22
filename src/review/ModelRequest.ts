@@ -10,12 +10,15 @@ export class ModelRequest {
     private diffs: string[] = [];
     private model?: Model;
     private options: Options;
+    private customPrompt: string;
 
     constructor(
         private readonly config: Config,
-        private changeDescription: string | undefined
+        private changeDescription: string | undefined,
+        customPromptOverride?: string
     ) {
         this.options = config.getOptions();
+        this.customPrompt = customPromptOverride ?? this.options.customPrompt;
     }
 
     /** get model on first use, fixed for this request */
@@ -135,7 +138,7 @@ export class ModelRequest {
         return createReviewPrompt(
             this.changeDescription,
             diff,
-            this.options.customPrompt,
+            this.customPrompt,
             promptType
         );
     }

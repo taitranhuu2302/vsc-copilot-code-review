@@ -9,4 +9,7 @@
 !media/main.js
 !media/reset.css
 !media/vscode.css
+!media/prompts/review-v2think.md
+!media/prompts/lang/csharp.md
+!media/prompts/lang/react.md
 !out/extension.js
