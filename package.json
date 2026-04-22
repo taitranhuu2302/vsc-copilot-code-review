@@ -3,7 +3,7 @@
   "displayName": "NextG Code Review",
   "description": "Review source code changes in Git using NextG Code Review, an AI-powered code review assistant built on top of GitHub Copilot Chat. Use this extension to get AI-generated review comments on your code changes, helping you catch potential issues and improve code quality before committing.",
   "publisher": "RiderTran",
-  "version": "0.22.3",
+  "version": "0.22.4",
   "repository": {
     "type": "git",
     "url": "https://github.com/taitranhuu2302/vsc-copilot-code-review"
