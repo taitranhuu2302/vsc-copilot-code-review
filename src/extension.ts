@@ -114,6 +114,91 @@ export function activate(context: vscode.ExtensionContext) {
     );
     context.subscriptions.push(
         vscode.commands.registerCommand(
+            'codeReview.generateArchitectureContextWithAI',
+            async () => {
+                const config = await getConfig();
+                const targetPath = path.join(
+                    config.workspaceRoot,
+                    '.github',
+                    'vsc-code-review',
+                    'project-context.md'
+                );
+                const templateContent = await loadArchitecturePromptTemplate(
+                    context.extensionUri
+                );
+                const selectedMode = await vscode.window.showQuickPick(
+                    [
+                        { label: 'Auto', detail: 'Let AI detect project type' },
+                        { label: 'Backend', detail: 'Prioritize backend analysis' },
+                        {
+                            label: 'Frontend',
+                            detail: 'Prioritize frontend analysis',
+                        },
+                        {
+                            label: 'Fullstack',
+                            detail: 'Balance backend and frontend analysis',
+                        },
+                    ],
+                    {
+                        placeHolder:
+                            'Select architecture analysis scope mode',
+                    }
+                );
+                if (!selectedMode) {
+                    return;
+                }
+
+                const modePrompt = await loadArchitectureModePrompt(
+                    context.extensionUri,
+                    selectedMode.label
+                );
+                const promptWithMode = `${templateContent}\n\n${modePrompt}`;
+
+                await vscode.window.withProgress(
+                    {
+                        location: vscode.ProgressLocation.Notification,
+                        title: 'Generating architecture context with AI...',
+                        cancellable: true,
+                    },
+                    async (_progress, token) => {
+                        const model = await config.getModel();
+                        const response = await model.sendRequest(
+                            promptWithMode,
+                            token
+                        );
+                        await mkdir(path.dirname(targetPath), {
+                            recursive: true,
+                        });
+
+                        let existing = '';
+                        try {
+                            existing = await readFile(targetPath, 'utf8');
+                        } catch {
+                            // file may not exist yet
+                        }
+
+                        const generatedAt = new Date().toISOString();
+                        const block = `## AI Architecture Context (${generatedAt})\n\n${response.trim()}\n`;
+                        const merged = existing.trim()
+                            ? `${existing.trimEnd()}\n\n---\n\n${block}`
+                            : block;
+                        await writeFile(targetPath, merged, 'utf8');
+
+                        const document = await vscode.workspace.openTextDocument(
+                            targetPath
+                        );
+                        await vscode.window.showTextDocument(document);
+                    }
+                );
+
+                vscode.window.showInformationMessage(
+                    'Generated architecture context and appended to .github/vsc-code-review/project-context.md'
+                );
+            }
+        )
+    );
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
             'codeReview.loadSavedReview',
             async () => {
                 const config = await getConfig();
@@ -350,9 +435,34 @@ async function loadArchitecturePromptTemplate(
         'media',
         'prompts',
         'templates',
-        'architecture-project-context.md'
+        'architecture',
+        'common.md'
     );
     return await readFile(templatePath.fsPath, 'utf8');
+}
+
+async function loadArchitectureModePrompt(
+    extensionUri: vscode.Uri,
+    modeLabel: string
+): Promise<string> {
+    const modeFile =
+        modeLabel.toLowerCase() === 'backend'
+            ? 'backend.md'
+            : modeLabel.toLowerCase() === 'frontend'
+              ? 'frontend.md'
+              : modeLabel.toLowerCase() === 'fullstack'
+                ? 'fullstack.md'
+                : 'auto.md';
+
+    const modePath = vscode.Uri.joinPath(
+        extensionUri,
+        'media',
+        'prompts',
+        'templates',
+        'architecture',
+        modeFile
+    );
+    return await readFile(modePath.fsPath, 'utf8');
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

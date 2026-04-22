@@ -3,7 +3,7 @@
   "displayName": "NextG Code Review",
   "description": "Review source code changes in Git using NextG Code Review, an AI-powered code review assistant built on top of GitHub Copilot Chat. Use this extension to get AI-generated review comments on your code changes, helping you catch potential issues and improve code quality before committing.",
   "publisher": "RiderTran",
-  "version": "0.22.4",
+  "version": "0.23.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/taitranhuu2302/vsc-copilot-code-review"
@@ -52,6 +52,12 @@
         "title": "Append Architecture Prompt To Project Context",
         "category": "codeReview",
         "icon": "$(add)"
+      },
+      {
+        "command": "codeReview.generateArchitectureContextWithAI",
+        "title": "Generate Architecture Context With AI",
+        "category": "codeReview",
+        "icon": "$(sparkle)"
       },
       {
         "command": "codeReview.refreshCodeReview",
@@ -210,6 +216,11 @@
           "command": "codeReview.appendArchitecturePromptToProjectContext",
           "when": "view == codeReview.codeReview",
           "group": "navigation@4"
+        },
+        {
+          "command": "codeReview.generateArchitectureContextWithAI",
+          "when": "view == codeReview.codeReview",
+          "group": "navigation@5"
         }
       ],
       "comments/commentThread/context": [

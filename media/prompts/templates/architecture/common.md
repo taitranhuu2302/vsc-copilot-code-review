@@ -1,9 +1,10 @@
-Act as a Senior Software Architect specializing in [Python/C#]. Please deeply analyze this entire project codebase and generate a highly comprehensive, multi-dimensional architectural documentation.
+Act as a Senior Software Architect specializing in [Backend (Python/C#)] and [Frontend (React/TypeScript)]. Please deeply analyze this entire project codebase and generate a highly comprehensive, multi-dimensional architectural documentation.
 
 CRITICAL INSTRUCTIONS:
 
 - MERMAID.JS: You MUST use Mermaid.js syntax for EVERY diagram requested below. Do not skip the visual representations.
 - FILE OUTPUT: You MUST write the entire generated content into a single file named ARCHITECTURE.md located inside the docs folder (create the folder if it doesn't exist).
+- EVIDENCE RULE: Every major statement must be grounded in concrete evidence from files, symbols, or configurations discovered in the repo.
 
 Your analysis must format the output clearly using Markdown and include the following categorized sections in order:
 
