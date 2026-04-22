@@ -1,4 +1,4 @@
-Act as a Senior Software Architect specializing in [Backend (Python/C#)] and [Frontend (React/TypeScript)]. Please deeply analyze this entire project codebase and generate a highly comprehensive, multi-dimensional architectural documentation.
+Act as a Senior Software Architect specializing in [Backend] and [Frontend (React/TypeScript)]. Please deeply analyze this entire project codebase and generate a highly comprehensive, multi-dimensional architectural documentation.
 
 CRITICAL INSTRUCTIONS:
 

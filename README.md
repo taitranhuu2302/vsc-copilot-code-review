@@ -16,11 +16,6 @@ NextG Code Review is a Visual Studio Code extension that uses GitHub Copilot Cha
 - NextG branding applied in extension UI and documentation.
 - Review history export now supports timestamped JSON files with scope-aware naming and configurable output path (`codeReview.reviewHistoryPath`).
 - Added saved review reloading from the Source Control review panel (**Load Saved Review**).
-- Added project context tooling:
-  - Create/append architecture prompt into `.github/vsc-code-review/project-context.md`
-  - Generate architecture context with Copilot AI and append output to `project-context.md`
-  - Scope mode picker for architecture generation: `Auto`, `Backend`, `Frontend`, `Fullstack`
-- Architecture prompt templates are split by mode for easier maintenance.
 
 ## Fork Lineage
 
@@ -70,16 +65,6 @@ codeReview will respond with review comments grouped by file and sorted by sever
 - **Custom Instructions**: Add custom instructions via the `codeReview: Custom Prompt` setting (e.g., change the language of review comments by adding `- In the final JSON output, use Spanish for the comment field.`).
 - **Interactive Navigation**: Navigate between review comments using keyboard shortcuts and inline buttons directly from the Source Control tab.
 - **Saved Review Reloading**: Use the **Load Saved Review** action in the Code Review view title to reopen exported review `.json` files in the sidebar.
-- **Project Context Scaffolding**:
-  - Use **codeReview: Create Project Context Prompt** to generate `.github/vsc-code-review/project-context.md` from the built-in architecture prompt base template.
-  - Use **codeReview: Append Architecture Prompt To Project Context** to append the architecture prompt base template into an existing `project-context.md`.
-  - Use **codeReview: Generate Architecture Context With AI** to execute the architecture prompt with Copilot and append the generated result into `project-context.md` (supports scope mode picker: `Auto`, `Backend`, `Frontend`, `Fullstack`).
-  - Architecture templates are split for maintainability:
-    - `media/prompts/templates/architecture/common.md`
-    - `media/prompts/templates/architecture/auto.md`
-    - `media/prompts/templates/architecture/backend.md`
-    - `media/prompts/templates/architecture/frontend.md`
-    - `media/prompts/templates/architecture/fullstack.md`
 - **Agent Support**: Adds tools to enable automatic reviews in agent mode:
   - `#review`: Reviews changes between two git references (branches, tags, or commits)
   - `#reviewStaged`: Reviews only staged changes in your working directory

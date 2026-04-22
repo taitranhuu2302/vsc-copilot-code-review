@@ -42,24 +42,6 @@
         "category": "codeReview"
       },
       {
-        "command": "codeReview.createProjectContextPrompt",
-        "title": "Create Project Context Prompt",
-        "category": "codeReview",
-        "icon": "$(new-file)"
-      },
-      {
-        "command": "codeReview.appendArchitecturePromptToProjectContext",
-        "title": "Append Architecture Prompt To Project Context",
-        "category": "codeReview",
-        "icon": "$(add)"
-      },
-      {
-        "command": "codeReview.generateArchitectureContextWithAI",
-        "title": "Generate Architecture Context With AI",
-        "category": "codeReview",
-        "icon": "$(sparkle)"
-      },
-      {
         "command": "codeReview.refreshCodeReview",
         "title": "Refresh",
         "icon": "$(refresh)"
@@ -206,21 +188,6 @@
           "command": "codeReview.loadSavedReview",
           "when": "view == codeReview.codeReview",
           "group": "navigation@2"
-        },
-        {
-          "command": "codeReview.createProjectContextPrompt",
-          "when": "view == codeReview.codeReview",
-          "group": "navigation@3"
-        },
-        {
-          "command": "codeReview.appendArchitecturePromptToProjectContext",
-          "when": "view == codeReview.codeReview",
-          "group": "navigation@4"
-        },
-        {
-          "command": "codeReview.generateArchitectureContextWithAI",
-          "when": "view == codeReview.codeReview",
-          "group": "navigation@5"
         }
       ],
       "comments/commentThread/context": [
