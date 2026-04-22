@@ -47,6 +47,11 @@
         "icon": "$(refresh)"
       },
       {
+        "command": "codeReview.loadSavedReview",
+        "title": "Load Saved Review",
+        "icon": "$(folder-opened)"
+      },
+      {
         "command": "codeReview.reviewCommittedChanges",
         "title": "Review Committed Changes",
         "icon": "$(git-commit)"
@@ -178,6 +183,11 @@
           "command": "codeReview.refreshCodeReview",
           "when": "view == codeReview.codeReview",
           "group": "navigation"
+        },
+        {
+          "command": "codeReview.loadSavedReview",
+          "when": "view == codeReview.codeReview",
+          "group": "navigation@2"
         }
       ],
       "comments/commentThread/context": [
@@ -250,6 +260,11 @@
           "default": "",
           "description": "Add custom text to the review prompt. For example, \"- In the final JSON output, use Spanish for the  `comment` field.\"",
           "editPresentation": "multilineText"
+        },
+        "codeReview.reviewHistoryPath": {
+          "type": "string",
+          "default": ".codeReview",
+          "description": "Directory path where review result files are written. Supports relative paths (from workspace root) or absolute paths."
         },
         "codeReview.exclude": {
           "type": "array",

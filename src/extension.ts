@@ -1,3 +1,5 @@
+import { readFile } from 'fs/promises';
+import * as path from 'path';
 import * as vscode from 'vscode';
 
 import { reviewDiff } from '@/review/review';
@@ -6,6 +8,7 @@ import { UncommittedRef } from '@/types/Ref';
 import { ReviewRequest, ReviewScope } from '@/types/ReviewRequest';
 import { ReviewResult } from '@/types/ReviewResult';
 import { parseArguments } from '@/utils/parseArguments';
+import { passesMinSeverity } from '@/utils/severity';
 import { CodeReviewPanel } from '@/vscode/CodeReviewPanel';
 import { getConfig, toUri } from '@/vscode/config';
 import { ReviewTool } from '@/vscode/ReviewTool';
@@ -47,6 +50,44 @@ export function activate(context: vscode.ExtensionContext) {
             codeReviewPanel.refresh()
         )
     );
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
+            'codeReview.loadSavedReview',
+            async () => {
+                const config = await getConfig();
+                const reviewDirectory = resolveReviewHistoryDirectory(config);
+                const selected = await vscode.window.showOpenDialog({
+                    canSelectFiles: true,
+                    canSelectFolders: false,
+                    canSelectMany: false,
+                    defaultUri: vscode.Uri.file(reviewDirectory),
+                    filters: { JSON: ['json'] },
+                    openLabel: 'Load saved review',
+                });
+                if (!selected || selected.length === 0) {
+                    return;
+                }
+
+                try {
+                    const raw = await readFile(selected[0].fsPath, 'utf8');
+                    const parsed = JSON.parse(raw) as unknown;
+                    if (!isReviewResult(parsed)) {
+                        throw new Error(
+                            'Selected file is not a valid review result JSON.'
+                        );
+                    }
+                    await vscode.commands.executeCommand('workbench.view.scm');
+                    await codeReviewPanel.displayChatReviewResults(parsed);
+                } catch (error) {
+                    const message =
+                        error instanceof Error ? error.message : 'Unknown error';
+                    vscode.window.showErrorMessage(
+                        `Failed to load saved review: ${message}`
+                    );
+                }
+            }
+        )
+    );
 
     context.subscriptions.push(
         vscode.commands.registerCommand('codeReview.nextComment', () =>
@@ -65,10 +106,26 @@ export function activate(context: vscode.ExtensionContext) {
             'codeReview.openCodeReviewPanel',
             async () => {
                 await vscode.commands.executeCommand('workbench.view.scm');
-                // Focus on the Code Review section if possible
-                await vscode.commands.executeCommand(
-                    'codeReview.codeReview.focus'
-                );
+                // Focus on the Code Review section if possible.
+                // Some VS Code states may not expose the auto-generated focus command yet.
+                try {
+                    await vscode.commands.executeCommand(
+                        'codeReview.codeReview.focus'
+                    );
+                } catch (error) {
+                    const message =
+                        error instanceof Error ? error.message : 'Unknown error';
+                    const reload = 'Reload Window';
+                    const selection = await vscode.window.showWarningMessage(
+                        `Opened Source Control, but could not focus the NextG Code Review view automatically. (${message})`,
+                        reload
+                    );
+                    if (selection === reload) {
+                        await vscode.commands.executeCommand(
+                            'workbench.action.reloadWindow'
+                        );
+                    }
+                }
             }
         )
     );
@@ -141,10 +198,18 @@ export function activate(context: vscode.ExtensionContext) {
                         const jsonStr = decodeURIComponent(args[0]);
                         console.log('Decoded JSON string:', jsonStr);
                         const parsed = JSON.parse(jsonStr) as unknown;
-                        if (Array.isArray(parsed) && parsed.length === 1) {
-                            adjustmentData = parsed[0] as typeof adjustmentData;
+                        if (
+                            Array.isArray(parsed) &&
+                            parsed.length === 1 &&
+                            isAdjustmentInput(parsed[0])
+                        ) {
+                            adjustmentData = parsed[0];
+                        } else if (isAdjustmentInput(parsed)) {
+                            adjustmentData = parsed;
                         } else {
-                            adjustmentData = parsed as typeof adjustmentData;
+                            throw new Error(
+                                'Invalid adjustment payload format in command argument'
+                            );
                         }
                     } else if (
                         args.length >= 3 &&
@@ -202,6 +267,54 @@ export function activate(context: vscode.ExtensionContext) {
             'reviewUnstaged',
             new ReviewTool({ defaultTarget: UncommittedRef.Unstaged })
         )
+    );
+}
+
+function resolveReviewHistoryDirectory(config: Config): string {
+    const configured = config.getOptions().reviewHistoryPath.trim();
+    if (!configured) {
+        return path.join(config.workspaceRoot, '.codeReview');
+    }
+    return path.isAbsolute(configured)
+        ? configured
+        : path.join(config.workspaceRoot, configured);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null;
+}
+
+function isReviewResult(value: unknown): value is ReviewResult {
+    if (!isRecord(value)) {
+        return false;
+    }
+    if (!Array.isArray(value.fileComments) || !Array.isArray(value.errors)) {
+        return false;
+    }
+    if (!isRecord(value.request) || !isRecord(value.request.scope)) {
+        return false;
+    }
+    return true;
+}
+
+function isAdjustmentInput(
+    value: unknown
+): value is {
+    filePath: string;
+    originalCode: string;
+    adjustedCode: string;
+    startLine?: number;
+    endLine?: number;
+} {
+    if (!isRecord(value)) {
+        return false;
+    }
+    return (
+        typeof value.filePath === 'string' &&
+        typeof value.originalCode === 'string' &&
+        typeof value.adjustedCode === 'string' &&
+        (value.startLine === undefined || typeof value.startLine === 'number') &&
+        (value.endLine === undefined || typeof value.endLine === 'number')
     );
 }
 
@@ -269,7 +382,8 @@ async function handleChat(
     const filteredResults = results.fileComments.filter((file) => {
         return file.comments.some(
             (comment) =>
-                comment.severity >= options.minSeverity && comment.line > 0
+                passesMinSeverity(comment.severity, options.minSeverity) &&
+                comment.line > 0
         );
     });
 
@@ -408,7 +522,8 @@ function showReviewResults(
 
         const filteredFileComments = file.comments.filter(
             (comment) =>
-                comment.severity >= options.minSeverity && comment.line > 0
+                passesMinSeverity(comment.severity, options.minSeverity) &&
+                comment.line > 0
         );
 
         if (filteredFileComments.length > 0) {
@@ -434,7 +549,7 @@ function showReviewResults(
                 stream.markdown(`**${comment.promptType}**: `);
             }
             stream.markdown(
-                `${comment.comment} (Severity: ${comment.severity}/5)`
+                `${comment.comment} (Severity: ${comment.severity})`
             );
             noProblemsFound = false;
         }

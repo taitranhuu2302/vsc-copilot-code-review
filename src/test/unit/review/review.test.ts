@@ -32,6 +32,7 @@ function createMockConfig() {
         workspaceRoot: '/mock/workspace/root',
         getOptions: vi.fn(() => ({
             customPrompt: 'custom prompt',
+            reviewHistoryPath: '.codeReview',
             minSeverity: 3,
             excludeGlobs: [] as string[],
             enableDebugOutput: false,
@@ -90,7 +91,7 @@ describe('reviewDiff', () => {
             file: 'file2',
             comment: 'Some review comment',
             line: 1,
-            severity: 3,
+            severity: 'medium',
         },
     ];
 
@@ -212,6 +213,7 @@ describe('reviewDiff', () => {
         vi.mocked(parseResponse).mockReturnValue(mockComments);
         vi.mocked(config.getOptions).mockReturnValue({
             customPrompt: 'custom prompt',
+            reviewHistoryPath: '.codeReview',
             minSeverity: 3,
             excludeGlobs: [] as string[],
             enableDebugOutput: false,

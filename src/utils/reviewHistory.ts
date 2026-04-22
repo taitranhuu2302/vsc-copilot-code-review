@@ -5,8 +5,6 @@ import type { Config } from '@/types/Config';
 import type { ReviewResult } from '@/types/ReviewResult';
 import { UncommittedRef } from '@/types/Ref';
 
-const historyDirectory = '.codeReview';
-
 type SerializableError = {
     name: string;
     message: string;
@@ -17,7 +15,7 @@ export async function appendReviewHistory(
     config: Config,
     result: ReviewResult
 ): Promise<void> {
-    const historyPath = path.join(config.workspaceRoot, historyDirectory);
+    const historyPath = resolveHistoryDirectory(config.workspaceRoot, config);
 
     await mkdir(historyPath, { recursive: true });
 
@@ -37,6 +35,16 @@ export async function appendReviewHistory(
 
 function toSafeTimestamp(isoTimestamp: string): string {
     return isoTimestamp.replace(/[:.]/g, '-');
+}
+
+function resolveHistoryDirectory(workspaceRoot: string, config: Config): string {
+    const configuredPath = config.getOptions().reviewHistoryPath.trim();
+    if (!configuredPath) {
+        return path.join(workspaceRoot, '.codeReview');
+    }
+    return path.isAbsolute(configuredPath)
+        ? configuredPath
+        : path.join(workspaceRoot, configuredPath);
 }
 
 function toScopeLabel(result: ReviewResult): string {

@@ -14,14 +14,14 @@ describe('parseComment', () => {
             file: 'a.js',
             comment: 'Some review comment',
             line: 123,
-            severity: 4,
+            severity: 'high',
         });
 
         expect(result).toEqual({
             file: 'a.js',
             comment: 'Some review comment',
             line: 123,
-            severity: 4,
+            severity: 'high',
         });
     });
 
@@ -35,7 +35,7 @@ describe('parseComment', () => {
             file: 'a.js',
             comment: 'Some review comment',
             line: 1,
-            severity: 1,
+            severity: 'low',
         });
     });
 
@@ -51,7 +51,7 @@ describe('parseComment', () => {
             file: 'a.js',
             comment: 'Some review comment',
             line: 1,
-            severity: 4,
+            severity: 'high',
         });
     });
 
@@ -67,7 +67,7 @@ describe('parseComment', () => {
             file: 'a.js',
             comment: 'Some review comment',
             line: 123,
-            severity: 1,
+            severity: 'critical',
         });
     });
 
@@ -164,16 +164,16 @@ describe('sortFileCommentsBySeverity', () => {
                         file: 'file2',
                         comment: 'Yet another review comment',
                         line: 1,
-                        severity: 3,
+                        severity: 'medium',
                     },
                     {
                         file: 'file2',
                         comment: 'Another review comment',
                         line: 2,
-                        severity: 5,
+                        severity: 'critical',
                     },
                 ],
-                maxSeverity: 5,
+                maxSeverity: 'critical',
             },
             {
                 target: 'file1',
@@ -182,16 +182,16 @@ describe('sortFileCommentsBySeverity', () => {
                         file: 'file1',
                         comment: 'Another review comment',
                         line: 3,
-                        severity: 2,
+                        severity: 'low',
                     },
                     {
                         file: 'file1',
                         comment: 'Some review comment',
                         line: 4,
-                        severity: 4,
+                        severity: 'high',
                     },
                 ],
-                maxSeverity: 4,
+                maxSeverity: 'high',
             },
         ];
 
@@ -204,16 +204,16 @@ describe('sortFileCommentsBySeverity', () => {
                         file: 'file2',
                         comment: 'Another review comment',
                         line: 2,
-                        severity: 5,
+                        severity: 'critical',
                     },
                     {
                         file: 'file2',
                         comment: 'Yet another review comment',
                         line: 1,
-                        severity: 3,
+                        severity: 'medium',
                     },
                 ],
-                maxSeverity: 5,
+                maxSeverity: 'critical',
             },
             {
                 target: 'file1',
@@ -222,16 +222,16 @@ describe('sortFileCommentsBySeverity', () => {
                         file: 'file1',
                         comment: 'Some review comment',
                         line: 4,
-                        severity: 4,
+                        severity: 'high',
                     },
                     {
                         file: 'file1',
                         comment: 'Another review comment',
                         line: 3,
-                        severity: 2,
+                        severity: 'low',
                     },
                 ],
-                maxSeverity: 4,
+                maxSeverity: 'high',
             },
         ];
         expect(result).toEqual(expectedFileComments);
@@ -248,7 +248,7 @@ describe('sortFileCommentsBySeverity', () => {
             {
                 target: 'file2',
                 comments: [],
-                maxSeverity: 5, // nonsense, but should be ignored
+                maxSeverity: 'critical', // nonsense, but should be ignored
             },
             {
                 target: 'file1',
@@ -257,16 +257,16 @@ describe('sortFileCommentsBySeverity', () => {
                         file: 'file1',
                         comment: 'Another review comment',
                         line: 3,
-                        severity: 2,
+                        severity: 'low',
                     },
                     {
                         file: 'file1',
                         comment: 'Some review comment',
                         line: 4,
-                        severity: 4,
+                        severity: 'high',
                     },
                 ],
-                maxSeverity: 4,
+                maxSeverity: 'high',
             },
         ];
 
@@ -279,16 +279,16 @@ describe('sortFileCommentsBySeverity', () => {
                         file: 'file1',
                         comment: 'Some review comment',
                         line: 4,
-                        severity: 4,
+                        severity: 'high',
                     },
                     {
                         file: 'file1',
                         comment: 'Another review comment',
                         line: 3,
-                        severity: 2,
+                        severity: 'low',
                     },
                 ],
-                maxSeverity: 4,
+                maxSeverity: 'high',
             },
         ];
         expect(result).toEqual(expectedFileComments);

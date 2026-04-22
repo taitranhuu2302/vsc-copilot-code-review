@@ -62,7 +62,7 @@ async function initializeConfig(): Promise<Config> {
     };
 
     vscode.workspace.onDidChangeConfiguration((ev) => {
-        if (!ev.affectsConfiguration('lgtm')) {
+        if (!ev.affectsConfiguration('codeReview')) {
             return;
         }
         config.logger.debug('Updating config...');
@@ -102,7 +102,7 @@ async function loadModel(modelId: string, logger: Logger): Promise<Model> {
 
         if (option === resetToDefaultOption) {
             await vscode.workspace
-                .getConfiguration('lgtm')
+                .getConfiguration('codeReview')
                 .update(
                     'chatModel',
                     defaultModelId,
@@ -111,12 +111,12 @@ async function loadModel(modelId: string, logger: Logger): Promise<Model> {
             logger.info(`Chat model reset to default: ${defaultModelId}`);
             return await loadModel(defaultModelId, logger);
         } else if (option === selectChatModelOption) {
-            await vscode.commands.executeCommand('lgtm.selectChatModel');
+            await vscode.commands.executeCommand('codeReview.selectChatModel');
             return await loadModel(getOptions().chatModel, logger);
         }
 
         throw new Error(
-            `Couldn't find chat model. Please ensure the lgtm.chatModel setting is set to an available model ID. You can use the 'LGTM: Select Chat Model' command to pick one.`
+            `Couldn't find chat model. Please ensure the codeReview.chatModel setting is set to an available model ID. You can use the 'codeReview: Select Chat Model' command to pick one.`
         );
     }
 }
@@ -127,10 +127,14 @@ export function toUri(config: Config, file: string): vscode.Uri {
 }
 
 function getOptions(): Options {
-    const config = vscode.workspace.getConfiguration('lgtm');
+    const config = vscode.workspace.getConfiguration('codeReview');
 
     const minSeverity = config.get<number>('minSeverity', 1);
     const customPrompt = config.get<string>('customPrompt', '');
+    const reviewHistoryPath = config.get<string>(
+        'reviewHistoryPath',
+        '.codeReview'
+    );
     const excludeGlobs = config.get<string[]>('exclude', []);
     const enableDebugOutput = config.get<boolean>('enableDebugOutput', false);
     const chatModel = config.get<string>('chatModel', defaultModelId);
@@ -151,6 +155,7 @@ function getOptions(): Options {
     return {
         minSeverity,
         customPrompt,
+        reviewHistoryPath,
         excludeGlobs,
         enableDebugOutput,
         chatModel,

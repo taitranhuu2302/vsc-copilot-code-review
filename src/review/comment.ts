@@ -1,6 +1,7 @@
 import { FileComments } from '@/types/FileComments';
 import { ReviewComment } from '@/types/ReviewComment';
 import { parseAsJsonArray } from '@/utils/json';
+import { severityFromUnknown, severityRank } from '@/utils/severity';
 import { reasoningTag } from './prompt';
 
 /** Parse model response into individual comments  */
@@ -54,15 +55,8 @@ export function parseComment(comment: unknown): ReviewComment {
         line = comment.line;
     }
 
-    let severity = 1; // fallback to lowest severity in case of invalid values
-    if (
-        'severity' in comment &&
-        typeof comment.severity === 'number' &&
-        comment.severity >= 1 &&
-        comment.severity <= 5
-    ) {
-        severity = comment.severity;
-    }
+    const severity =
+        'severity' in comment ? severityFromUnknown(comment.severity) : 'low';
 
     const result: ReviewComment = {
         file: comment.file,
@@ -121,7 +115,9 @@ export function sortFileCommentsBySeverity(
     for (const comment of comments) {
         //sort comments for this file by descending severity
         const sortedComments = Array.from(comment.comments);
-        sortedComments.sort((a, b) => b.severity - a.severity);
+        sortedComments.sort(
+            (a, b) => severityRank(b.severity) - severityRank(a.severity)
+        );
 
         if (sortedComments.length === 0) {
             continue;
@@ -137,7 +133,7 @@ export function sortFileCommentsBySeverity(
 
     //sort all files by descending max severity
     const sortedFiles = Array.from(commentsByFile.values()).sort(
-        (a, b) => b.maxSeverity - a.maxSeverity
+        (a, b) => severityRank(b.maxSeverity) - severityRank(a.maxSeverity)
     );
 
     return sortedFiles;

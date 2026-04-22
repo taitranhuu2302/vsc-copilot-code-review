@@ -8,11 +8,13 @@ export type ProposedAdjustment = {
     endLine?: number; // optional end line for the replacement (if different from comment line)
 };
 
+export type ReviewSeverity = 'low' | 'medium' | 'high' | 'critical';
+
 export type ReviewComment = {
     file: string; // file path
     comment: string; // review comment
     line: number; // first affected line number (1-based, to-side of diff)
-    severity: number; // in 0..5
+    severity: ReviewSeverity;
     promptType?: PromptType; // which prompt was used to generate this comment (if overridden)
     proposedAdjustment?: ProposedAdjustment; // optional proposed code adjustment
 };

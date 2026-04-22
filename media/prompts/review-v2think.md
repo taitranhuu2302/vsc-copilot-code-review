@@ -52,16 +52,26 @@ Reasoning checklist:
   - `file`
   - `line`
   - `comment`
-  - `severity` (1..5)
+  - `severity` (`low` | `medium` | `high` | `critical`)
   - optional `proposedAdjustment` with `originalCode`, `adjustedCode`, `description`, optional `startLine`, optional `endLine`
 - Keep findings concrete and reference exact code fragments where possible.
 - Do not include markdown, headings, or prose outside JSON.
 
+## Actionability requirements
+- For each finding, explain how to validate/verify the issue (reproduction condition, boundary condition, failure path, or missing assertion) in concrete engineering terms.
+- If recommending validation/sanitization, specify:
+  - exactly what to validate (format, bounds, allowed values/chars, null/empty handling, normalization),
+  - where it should be enforced (input boundary, service/domain layer, API contract, persistence boundary),
+  - and why this placement is better than ad-hoc checks.
+- Do not suggest blanket sanitization at every call site without evidence.
+- Provide `proposedAdjustment` whenever you can suggest a safe, minimal code-level fix.
+- If you cannot provide `proposedAdjustment`, state briefly in the `comment` why a concrete patch is not safe with current context.
+
 ## Severity guidance
-- Critical: likely production incident, data corruption, security vulnerability, auth bypass, severe business failure.
-- High: likely bug, significant performance issue, broken edge case, unsafe concurrency, major maintainability risk.
-- Medium: clarity/design/testability issue that increases future risk.
-- Low: small cleanup or readability polish.
+- `critical`: likely production incident, data corruption, security vulnerability, auth bypass, severe business failure.
+- `high`: likely bug, significant performance issue, broken edge case, unsafe concurrency, major maintainability risk.
+- `medium`: clarity/design/testability issue that increases future risk.
+- `low`: small cleanup or readability polish.
 
 {{CHANGE_DESCRIPTION_BLOCK}}
 

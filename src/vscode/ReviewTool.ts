@@ -53,7 +53,7 @@ export class ReviewTool implements vscode.LanguageModelTool<ReviewInput> {
         const comments = result.fileComments.flatMap((fileComment) => {
             return fileComment.comments.map(
                 (comment) =>
-                    `${comment.file}:${comment.line} - ${comment.comment} (Severity: ${comment.severity}/5)`
+                    `${comment.file}:${comment.line} - ${comment.comment} (Severity: ${comment.severity})`
             );
         });
 

@@ -4,6 +4,7 @@ import { FileComments } from '@/types/FileComments';
 import { ProposedAdjustment, ReviewComment } from '@/types/ReviewComment';
 import { ReviewRequest, ReviewScope } from '@/types/ReviewRequest';
 import { ReviewResult } from '@/types/ReviewResult';
+import { passesMinSeverity } from '@/utils/severity';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { getConfig } from './config';
@@ -363,7 +364,10 @@ export class CodeReviewPanel implements vscode.WebviewViewProvider {
                     ...file,
                     comments: file.comments.filter(
                         (comment) =>
-                            comment.severity >= options.minSeverity &&
+                            passesMinSeverity(
+                                comment.severity,
+                                options.minSeverity
+                            ) &&
                             comment.line > 0
                     ),
                 };
@@ -881,7 +885,10 @@ export class CodeReviewPanel implements vscode.WebviewViewProvider {
                     ...file,
                     comments: file.comments.filter(
                         (comment: ReviewComment) =>
-                            comment.severity >= options.minSeverity &&
+                            passesMinSeverity(
+                                comment.severity,
+                                options.minSeverity
+                            ) &&
                             comment.line > 0
                     ),
                 };

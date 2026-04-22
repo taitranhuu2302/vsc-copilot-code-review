@@ -578,17 +578,16 @@ body {
     background-color: var(--vscode-list-hoverBackground);
 }
 
-.result-comment.severity-1,
-.result-comment.severity-2 {
+.result-comment.severity-low {
     border-left-color: var(--vscode-notificationsInfoIcon-foreground, #007acc);
 }
 
-.result-comment.severity-3 {
+.result-comment.severity-medium {
     border-left-color: var(--vscode-notificationsWarningIcon-foreground, #ffcc00);
 }
 
-.result-comment.severity-4,
-.result-comment.severity-5 {
+.result-comment.severity-high,
+.result-comment.severity-critical {
     border-left-color: var(--vscode-notificationsErrorIcon-foreground, #f85149);
 }
 

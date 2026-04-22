@@ -146,6 +146,7 @@ function createMockConfig() {
             ({
                 minSeverity: 3,
                 customPrompt: 'custom prompt',
+                reviewHistoryPath: '.codeReview',
                 excludeGlobs: [] as string[],
                 enableDebugOutput: false,
                 chatModel: 'test-model',

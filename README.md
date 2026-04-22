@@ -47,6 +47,7 @@ codeReview will respond with review comments grouped by file and sorted by sever
 - **Model Selection**: Choose any language model available to VS Code via the **codeReview: Select Chat Model** command available in the Command Palette (press `Cmd+Shift+P` or `Ctrl+Shift+P`).
 - **Custom Instructions**: Add custom instructions via the `codeReview: Custom Prompt` setting (e.g., change the language of review comments by adding `- In the final JSON output, use Spanish for the comment field.`).
 - **Interactive Navigation**: Navigate between review comments using keyboard shortcuts and inline buttons directly from the Source Control tab.
+- **Saved Review Reloading**: Use the **Load Saved Review** action in the Code Review view title to reopen exported review `.json` files in the sidebar.
 - **Agent Support**: Adds tools to enable automatic reviews in agent mode:
   - `#review`: Reviews changes between two git references (branches, tags, or commits)
   - `#reviewStaged`: Reviews only staged changes in your working directory
@@ -69,6 +70,9 @@ These files are automatically added to the review prompt for better, project-awa
 Built-in language guidance prompts are stored in:
 - `media/prompts/lang/csharp.md`
 - `media/prompts/lang/react.md`
+
+Review export location is configurable via:
+- `codeReview.reviewHistoryPath` (relative to workspace root or absolute path)
 
 ### Recommended layout
 
