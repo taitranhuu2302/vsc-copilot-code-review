@@ -1,4 +1,4 @@
-import { readFile } from 'fs/promises';
+import { mkdir, readFile, writeFile } from 'fs/promises';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
@@ -48,6 +48,68 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand('codeReview.refreshCodeReview', () =>
             codeReviewPanel.refresh()
+        )
+    );
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
+            'codeReview.createProjectContextPrompt',
+            async () => {
+                const config = await getConfig();
+                const promptRootPath = path.join(
+                    config.workspaceRoot,
+                    '.github',
+                    'vsc-code-review'
+                );
+                const targetPath = path.join(promptRootPath, 'project-context.md');
+                const templateContent = await loadArchitecturePromptTemplate(
+                    context.extensionUri
+                );
+                await mkdir(path.dirname(targetPath), { recursive: true });
+                await writeFile(targetPath, templateContent, 'utf8');
+
+                const document = await vscode.workspace.openTextDocument(
+                    targetPath
+                );
+                await vscode.window.showTextDocument(document);
+                vscode.window.showInformationMessage(
+                    'Created .github/vsc-code-review/project-context.md from architecture prompt template'
+                );
+            }
+        )
+    );
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
+            'codeReview.appendArchitecturePromptToProjectContext',
+            async () => {
+                const config = await getConfig();
+                const targetPath = path.join(
+                    config.workspaceRoot,
+                    '.github',
+                    'vsc-code-review',
+                    'project-context.md'
+                );
+                const templateContent = await loadArchitecturePromptTemplate(
+                    context.extensionUri
+                );
+                await mkdir(path.dirname(targetPath), { recursive: true });
+                let existing = '';
+                try {
+                    existing = await readFile(targetPath, 'utf8');
+                } catch {
+                    // file may not exist yet
+                }
+                const merged = existing.trim()
+                    ? `${existing.trimEnd()}\n\n---\n\n${templateContent}`
+                    : templateContent;
+                await writeFile(targetPath, merged, 'utf8');
+                const document = await vscode.workspace.openTextDocument(
+                    targetPath
+                );
+                await vscode.window.showTextDocument(document);
+                vscode.window.showInformationMessage(
+                    'Appended architecture prompt template to .github/vsc-code-review/project-context.md'
+                );
+            }
         )
     );
     context.subscriptions.push(
@@ -278,6 +340,19 @@ function resolveReviewHistoryDirectory(config: Config): string {
     return path.isAbsolute(configured)
         ? configured
         : path.join(config.workspaceRoot, configured);
+}
+
+async function loadArchitecturePromptTemplate(
+    extensionUri: vscode.Uri
+): Promise<string> {
+    const templatePath = vscode.Uri.joinPath(
+        extensionUri,
+        'media',
+        'prompts',
+        'templates',
+        'architecture-project-context.md'
+    );
+    return await readFile(templatePath.fsPath, 'utf8');
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

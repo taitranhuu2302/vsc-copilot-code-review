@@ -1,12 +1,12 @@
 {
-  "name": "github-copilot-code-reviewer",
+  "name": "nextg-code-review",
   "displayName": "NextG Code Review",
-  "description": "Review source code changes in Git using GitHub Copilot",
-  "publisher": "jakubkozera",
-  "version": "0.22.2",
+  "description": "Review source code changes in Git using NextG Code Review, an AI-powered code review assistant built on top of GitHub Copilot Chat. Use this extension to get AI-generated review comments on your code changes, helping you catch potential issues and improve code quality before committing.",
+  "publisher": "RiderTran",
+  "version": "0.22.3",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jakubkozera/vsc-copilot-code-review"
+    "url": "https://github.com/taitranhuu2302/vsc-copilot-code-review"
   },
   "engines": {
     "vscode": "^1.99.1"
@@ -40,6 +40,18 @@
         "command": "codeReview.openCodeReviewPanel",
         "title": "Open Code Review Panel",
         "category": "codeReview"
+      },
+      {
+        "command": "codeReview.createProjectContextPrompt",
+        "title": "Create Project Context Prompt",
+        "category": "codeReview",
+        "icon": "$(new-file)"
+      },
+      {
+        "command": "codeReview.appendArchitecturePromptToProjectContext",
+        "title": "Append Architecture Prompt To Project Context",
+        "category": "codeReview",
+        "icon": "$(add)"
       },
       {
         "command": "codeReview.refreshCodeReview",
@@ -188,6 +200,16 @@
           "command": "codeReview.loadSavedReview",
           "when": "view == codeReview.codeReview",
           "group": "navigation@2"
+        },
+        {
+          "command": "codeReview.createProjectContextPrompt",
+          "when": "view == codeReview.codeReview",
+          "group": "navigation@3"
+        },
+        {
+          "command": "codeReview.appendArchitecturePromptToProjectContext",
+          "when": "view == codeReview.codeReview",
+          "group": "navigation@4"
         }
       ],
       "comments/commentThread/context": [
@@ -307,12 +329,13 @@
   },
   "scripts": {
     "preinstall": "npx only-allow pnpm",
-    "check-exclusive": "ps aux | grep -v grep | grep -q 'esbuild.*--watch' && echo 'esbuild --watch running, aborting!' && exit 1 || exit 0",
-    "vscode:prepublish": "pnpm check-exclusive && rm -rf ./out && pnpm esbuild-base --minify --pure:console.debug",
+    "check-exclusive": "node -e \"const { execSync } = require('child_process'); try { const cmd = process.platform === 'win32' ? 'tasklist' : 'ps aux'; const out = execSync(cmd, { stdio: ['ignore', 'pipe', 'ignore'] }).toString(); if (/esbuild(.|\\\\n)*--watch/.test(out)) { console.error('esbuild --watch running, aborting!'); process.exit(1); } } catch {}\"",
+    "vscode:prepublish": "pnpm check-exclusive && node -e \"require('fs').rmSync('out', { recursive: true, force: true });\" && pnpm esbuild-base --minify --pure:console.debug",
     "esbuild-base": "node ./node_modules/esbuild/bin/esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --define:__GIT_VERSION__=\\\"$GIT_VERSION\\\"",
     "esbuild": "pnpm esbuild-base --sourcemap",
     "watch": "pnpm esbuild-base --sourcemap --watch",
     "dev": "GIT_VERSION=$(git describe  --tags --long) pnpm build",
+    "package": "pnpm build",
     "build": "npx vsce package --no-dependencies",
     "lint": "tsc --noEmit && eslint src && prettier src --check",
     "test": "vitest run",

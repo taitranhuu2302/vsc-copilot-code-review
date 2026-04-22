@@ -9,7 +9,18 @@
 
 NextG Code Review is a Visual Studio Code extension that uses GitHub Copilot Chat to review source code changes in Git. It can help you catch bugs, areas for improvement, and other issues before merging.
 
-> **Note**: This project is a fork of [cpulvermacher/lgtm](https://github.com/cpulvermacher/lgtm) with enhanced Source Control integration and additional features.
+> **Note**: This project is forked from [jakubkozera/vsc-copilot-code-review](https://github.com/jakubkozera/vsc-copilot-code-review) and includes additional customizations.
+
+## Fork Lineage
+
+- Current fork: this repository
+- Upstream fork source: [jakubkozera/vsc-copilot-code-review](https://github.com/jakubkozera/vsc-copilot-code-review)
+- Original ancestor: [cpulvermacher/lgtm](https://github.com/cpulvermacher/lgtm)
+
+Key customizations in this fork include:
+- NextG branding updates in the VS Code UI and documentation
+- Enhanced prompt management with project-level context and language-specific prompt files
+- Saved review export/reload workflow in the Source Control review panel
 
 
 ## Getting Started
@@ -48,6 +59,9 @@ codeReview will respond with review comments grouped by file and sorted by sever
 - **Custom Instructions**: Add custom instructions via the `codeReview: Custom Prompt` setting (e.g., change the language of review comments by adding `- In the final JSON output, use Spanish for the comment field.`).
 - **Interactive Navigation**: Navigate between review comments using keyboard shortcuts and inline buttons directly from the Source Control tab.
 - **Saved Review Reloading**: Use the **Load Saved Review** action in the Code Review view title to reopen exported review `.json` files in the sidebar.
+- **Project Context Scaffolding**:
+  - Use **codeReview: Create Project Context Prompt** to generate `.github/vsc-code-review/project-context.md` from the built-in architecture template.
+  - Use **codeReview: Append Architecture Prompt To Project Context** to append the architecture template into an existing `project-context.md`.
 - **Agent Support**: Adds tools to enable automatic reviews in agent mode:
   - `#review`: Reviews changes between two git references (branches, tags, or commits)
   - `#reviewStaged`: Reviews only staged changes in your working directory
@@ -134,3 +148,8 @@ Source code changes and commit messages selected for review are sent to the chat
 ## Contributing
 
 Contributions are welcome! If you have ideas, bug reports, or want to help improve codeReview, please open an issue or submit a pull request on [GitHub](https://github.com/jakubkozera/vsc-copilot-code-review).
+
+### Packaging note
+
+- Use `pnpm package` (or `pnpm build`) to create the `.vsix`.
+- Avoid running raw `vsce package` directly in this repository; dependency checks may use npm behavior and report false "missing" transitive packages in a pnpm-managed workspace.
